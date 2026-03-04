@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - NeuroPepper</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --border: #475569;
+            --text: #f1f5f9;
+            --muted: #94a3b8;
+            --primary: #6366f1;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 2rem;
+        }
+        h1 { margin-bottom: 2rem; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+        }
+        .card h2 { color: var(--primary); margin-bottom: 1rem; }
+        .metric { margin-bottom: 0.75rem; }
+        .metric strong { color: var(--muted); }
+        .progress {
+            height: 8px;
+            background: var(--bg);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.25rem;
+        }
+        .progress-bar {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+        ul { list-style: none; }
+        li { padding: 0.25rem 0; color: var(--muted); }
+        .nav-link { color: var(--primary); display: block; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <a href="/" class="nav-link">← Back to Chat</a>
+    <h1>📊 System Admin Dashboard</h1>
+    
+    <div class="grid">
+        <div class="card" id="cpu-card">
+            <h2>CPU Status</h2>
+            <div class="metric"><strong>Usage:</strong> <span id="cpu-usage">--</span></div>
+            <div class="progress"><div class="progress-bar" id="cpu-bar" style="width: 0%"></div></div>
+            <div class="metric"><strong>Cores:</strong> <span id="cpu-cores">--</span></div>
+        </div>
+        
+        <div class="card" id="memory-card">
+            <h2>Memory (RAM)</h2>
+            <div class="metric"><strong>Usage:</strong> <span id="mem-usage">--</span></div>
+            <div class="progress"><div class="progress-bar" id="mem-bar" style="width: 0%"></div></div>
+        </div>
+        
+        <div class="card" id="gpu-card">
+            <h2>GPU Status</h2>
+            <div id="gpu-info">Checking...</div>
+        </div>
+        
+        <div class="card" id="ollama-card">
+            <h2>Ollama Status</h2>
+            <div class="metric"><strong>Status:</strong> <span id="ollama-status">--</span></div>
+            <div class="metric"><strong>URL:</strong> <span id="ollama-url">--</span></div>
+        </div>
+        
+        <div class="card" id="models-card">
+            <h2>Available Models</h2>
+            <ul id="models-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        async function updateStatus() {
+            try {
+                const res = await fetch('/admin/status');
+                const data = await res.json();
+                
+                // CPU
+                document.getElementById('cpu-usage').textContent = data.cpu.usage;
+                document.getElementById('cpu-cores').textContent = data.cpu.cores;
+                document.getElementById('cpu-bar').style.width = data.cpu.usage;
+                
+                // Memory
+                document.getElementById('mem-usage').textContent = `${data.memory.used} / ${data.memory.total} (${data.memory.percent}%)`;
+                document.getElementById('mem-bar').style.width = `${data.memory.percent}%`;
+                
+                // GPU
+                const gpuEl = document.getElementById('gpu-info');
+                if (data.gpu && data.gpu.length > 0 && !data.gpu[0].error) {
+                    gpuEl.innerHTML = data.gpu.map(g => `
+                        <div class="metric"><strong>${g.name}</strong></div>
+                        <div class="metric">Utilization: ${g.utilization}</div>
+                        <div class="metric">VRAM: ${g.memory_used} / ${g.memory_total}</div>
+                        <div class="metric">Temp: ${g.temperature}</div>
+                    `).join('<hr style="margin: 1rem 0; border-color: var(--border)">');
+                } else {
+                    gpuEl.textContent = 'No GPU detected';
+                }
+                
+                // Ollama
+                document.getElementById('ollama-status').textContent = data.ollama.status;
+                document.getElementById('ollama-url').textContent = data.ollama.url;
+                
+                // Models
+                const modelsList = document.getElementById('models-list');
+                modelsList.innerHTML = '';
+                const models = data.models.ollama || [];
+                models.forEach(m => {
+                    const li = document.createElement('li');
+                    li.textContent = m;
+                    modelsList.appendChild(li);
+                });
+                
+                if (models.length === 0) {
+                    modelsList.innerHTML = '<li>No models found</li>';
+                }
+                
+            } catch (e) {
+                console.error('Failed to fetch status:', e);
+            }
+        }
+        
+        updateStatus();
+        setInterval(updateStatus, 3000);
+    </script>
+</body>
+</html>

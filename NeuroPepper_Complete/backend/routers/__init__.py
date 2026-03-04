@@ -1,0 +1,15 @@
+from .text_router import router as text_router
+from .vision_router import router as vision_router
+from .rag_router import router as rag_router
+from .memory_router import router as memory_router
+from .pepper_router import router as pepper_router
+from .admin_router import router as admin_router
+from .models_router import router as models_router
+from .image_router import router as image_router
+from .video_router import router as video_router
+from .presentation_router import router as presentation_router
+from .benchmark_router import router as benchmark_router
+from .speech_router import router as speech_router
+from .orchestrator_router import router as orchestrator_router
+from .evaluation_router import router as evaluation_router
+from .generative_ai_router import router as generative_ai_router

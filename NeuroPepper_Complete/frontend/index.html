@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroPepper - Intelligent Robot AI Platform</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --surface-light: #334155;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #475569;
+            --error: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        
+        /* Header */
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .logo span {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+        
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--text);
+            background: var(--surface-light);
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--surface-light);
+            border-radius: 2rem;
+            font-size: 0.875rem;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.disconnected {
+            background: var(--warning);
+            animation: none;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 65px);
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+        
+        .sidebar h3 {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+        
+        .sidebar-section {
+            margin-bottom: 2rem;
+        }
+        
+        .model-select {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            color: var(--text);
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+        
+        .model-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+        
+        .btn-secondary {
+            background: var(--surface-light);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+        
+        .file-upload {
+            border: 2px dashed var(--border);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .file-upload:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+        
+        .file-upload input {
+            display: none;
+        }
+        
+        /* Chat Area */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 1rem;
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 1rem 1.25rem;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+        
+        .message.user {
+            background: var(--primary);
+            margin-left: auto;
+            border-bottom-right-radius: 0.25rem;
+        }
+        
+        .message.assistant {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 0.25rem;
+        }
+        
+        .message.assistant pre {
+            background: var(--background);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin: 0.5rem 0;
+        }
+        
+        .message.assistant code {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.875rem;
+        }
+        
+        .message-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+        
+        /* Input Area */
+        .input-container {
+            display: flex;
+            gap: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+        
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+        
+        #prompt-input {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            color: var(--text);
+            font-size: 1rem;
+            resize: none;
+            min-height: 60px;
+            max-height: 200px;
+        }
+        
+        #prompt-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        #send-btn {
+            padding: 1rem 1.5rem;
+            background: var(--primary);
+            border: none;
+            border-radius: 0.75rem;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.2s;
+        }
+        
+        #send-btn:hover {
+            background: var(--primary-dark);
+        }
+        
+        #send-btn:disabled {
+            background: var(--surface-light);
+            cursor: not-allowed;
+        }
+        
+        /* Pepper Status Panel */
+        .pepper-panel {
+            width: 280px;
+            background: var(--surface);
+            border-left: 1px solid var(--border);
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+        
+        .pepper-avatar {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+        
+        .pepper-status {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .pepper-status h4 {
+            margin-bottom: 0.25rem;
+        }
+        
+        .pepper-status p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+        
+        .quick-action {
+            padding: 0.75rem;
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            color: var(--text);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        
+        .quick-action:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .quick-action .icon {
+            font-size: 1.25rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        /* RAG Context Indicator */
+        .rag-context {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--secondary);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+        }
+        
+        .rag-context .title {
+            color: var(--secondary);
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 0.25rem;
+            padding: 1rem;
+        }
+        
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .pepper-panel { display: none; }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            🧠 <span>NeuroPepper</span>
+        </div>
+        <nav class="nav-links">
+            <a href="/" class="active">Chat</a>
+            <a href="/pepper_control">Robot Control</a>
+            <a href="/rag_studio">RAG Studio</a>
+            <a href="/memory_explorer">Memory</a>
+            <a href="/admin">Admin</a>
+        </nav>
+        <div class="status-indicator">
+            <div class="status-dot" id="connection-dot"></div>
+            <span id="connection-text">Connecting...</span>
+        </div>
+    </header>
+    
+    <div class="main-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <h3>AI Model</h3>
+                <select id="model-select" class="model-select">
+                    <option>Loading models...</option>
+                </select>
+            </div>
+            
+            <div class="sidebar-section">
+                <h3>Document Context (RAG)</h3>
+                <div class="file-upload" id="file-upload">
+                    <input type="file" id="doc-input" accept=".pdf,.docx,.txt,.md">
+                    <p>📄 Drop PDF or click to upload</p>
+                    <small style="color: var(--text-muted)">For document Q&A</small>
+                </div>
+                <div id="rag-status" style="margin-top: 0.5rem; font-size: 0.875rem;"></div>
+            </div>
+            
+            <div class="sidebar-section">
+                <h3>Vision Input</h3>
+                <div class="file-upload" id="image-upload">
+                    <input type="file" id="image-input" accept="image/*">
+                    <p>🖼️ Upload image for vision</p>
+                </div>
+                <div id="image-preview" style="margin-top: 0.5rem;"></div>
+            </div>
+            
+            <div class="sidebar-section">
+                <h3>Quick Actions</h3>
+                <button class="btn btn-secondary" onclick="clearChat()" style="margin-bottom: 0.5rem;">
+                    🗑️ Clear Chat
+                </button>
+                <button class="btn btn-secondary" onclick="exportChat()">
+                    📥 Export Chat
+                </button>
+            </div>
+        </aside>
+        
+        <!-- Chat Area -->
+        <main class="chat-container">
+            <div class="chat-messages" id="chat-messages">
+                <div class="message assistant">
+                    <p>👋 Hello! I'm <strong>NeuroPepper</strong>, your intelligent robot assistant.</p>
+                    <p style="margin-top: 0.5rem;">I can help you with:</p>
+                    <ul style="margin-top: 0.5rem; margin-left: 1.5rem;">
+                        <li>💬 General conversations and questions</li>
+                        <li>📄 Answering questions about uploaded documents (RAG)</li>
+                        <li>🖼️ Analyzing images (upload an image first)</li>
+                        <li>🤖 Controlling Pepper robot (if connected)</li>
+                    </ul>
+                    <div class="message-meta">System • Just now</div>
+                </div>
+            </div>
+            
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="prompt-input" 
+                        placeholder="Type your message... (Shift+Enter for new line)"
+                        rows="1"
+                    ></textarea>
+                </div>
+                <button id="send-btn">
+                    Send ➤
+                </button>
+            </div>
+        </main>
+        
+        <!-- Pepper Panel -->
+        <aside class="pepper-panel">
+            <div class="pepper-avatar">🤖</div>
+            <div class="pepper-status">
+                <h4>Pepper Robot</h4>
+                <p id="pepper-status-text">Checking connection...</p>
+            </div>
+            
+            <h3 style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 0.75rem;">QUICK ACTIONS</h3>
+            <div class="quick-actions">
+                <button class="quick-action" onclick="pepperAction('wave')">
+                    <div class="icon">👋</div>
+                    Wave
+                </button>
+                <button class="quick-action" onclick="pepperAction('nod')">
+                    <div class="icon">✅</div>
+                    Nod Yes
+                </button>
+                <button class="quick-action" onclick="pepperAction('shake')">
+                    <div class="icon">❌</div>
+                    Shake No
+                </button>
+                <button class="quick-action" onclick="pepperSpeak()">
+                    <div class="icon">🔊</div>
+                    Speak
+                </button>
+            </div>
+            
+            <div id="memory-context" class="rag-context" style="display: none;">
+                <div class="title">🧠 Memory Active</div>
+                <p id="memory-user">User context loaded</p>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // ============================================
+        // STATE MANAGEMENT
+        // ============================================
+        const state = {
+            currentModel: null,
+            ragContext: null,
+            imageFile: null,
+            userId: localStorage.getItem('neuropepper_user_id') || generateUserId(),
+            messages: []
+        };
+        
+        function generateUserId() {
+            const id = 'user_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('neuropepper_user_id', id);
+            return id;
+        }
+        
+        // ============================================
+        // DOM ELEMENTS
+        // ============================================
+        const dom = {
+            modelSelect: document.getElementById('model-select'),
+            chatMessages: document.getElementById('chat-messages'),
+            promptInput: document.getElementById('prompt-input'),
+            sendBtn: document.getElementById('send-btn'),
+            docInput: document.getElementById('doc-input'),
+            imageInput: document.getElementById('image-input'),
+            ragStatus: document.getElementById('rag-status'),
+            imagePreview: document.getElementById('image-preview'),
+            connectionDot: document.getElementById('connection-dot'),
+            connectionText: document.getElementById('connection-text'),
+            pepperStatusText: document.getElementById('pepper-status-text')
+        };
+        
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        async function init() {
+            await loadModels();
+            await checkConnections();
+            setupEventListeners();
+        }
+        
+        async function loadModels() {
+            try {
+                const res = await fetch('/api/models/');
+                const data = await res.json();
+                
+                dom.modelSelect.innerHTML = '';
+                
+                const categories = {
+                    'Local Text (Ollama)': data.ollama_text || data.ollama || [],
+                    'Local Vision (Ollama)': data.ollama_vision || [],
+                    'Remote Text (Cloud)': data.remote_text || [],
+                    'Remote Vision (Cloud)': data.remote_multimodal || []
+                };
+                
+                for (const [label, models] of Object.entries(categories)) {
+                    if (models.length > 0) {
+                        const group = document.createElement('optgroup');
+                        group.label = label;
+                        models.forEach(m => {
+                            const opt = document.createElement('option');
+                            opt.value = m;
+                            opt.textContent = m.split('/')[1];
+                            group.appendChild(opt);
+                        });
+                        dom.modelSelect.appendChild(group);
+                    }
+                }
+                
+                state.currentModel = dom.modelSelect.value;
+            } catch (e) {
+                dom.modelSelect.innerHTML = '<option>Error loading models</option>';
+            }
+        }
+        
+        async function checkConnections() {
+            try {
+                // Check main server
+                const res = await fetch('/health');
+                if (res.ok) {
+                    dom.connectionDot.classList.remove('disconnected');
+                    dom.connectionText.textContent = 'Connected';
+                }
+            } catch {
+                dom.connectionDot.classList.add('disconnected');
+                dom.connectionText.textContent = 'Disconnected';
+            }
+            
+            // Check Pepper
+            try {
+                const res = await fetch('/pepper/status');
+                const data = await res.json();
+                if (data.connected) {
+                    dom.pepperStatusText.textContent = `Connected (${data.battery || '?'}% battery)`;
+                } else {
+                    dom.pepperStatusText.textContent = 'Simulation Mode';
+                }
+            } catch {
+                dom.pepperStatusText.textContent = 'Unavailable';
+            }
+        }
+        
+        function setupEventListeners() {
+            dom.sendBtn.addEventListener('click', sendMessage);
+            dom.promptInput.addEventListener('keydown', e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            dom.modelSelect.addEventListener('change', () => {
+                state.currentModel = dom.modelSelect.value;
+            });
+            
+            // File uploads
+            document.getElementById('file-upload').addEventListener('click', () => dom.docInput.click());
+            dom.docInput.addEventListener('change', handleDocUpload);
+            
+            document.getElementById('image-upload').addEventListener('click', () => dom.imageInput.click());
+            dom.imageInput.addEventListener('change', handleImageUpload);
+        }
+        
+        // ============================================
+        // CHAT FUNCTIONS
+        // ============================================
+        function addMessage(content, role, model = null) {
+            const msg = document.createElement('div');
+            msg.className = `message ${role}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.innerHTML = formatContent(content);
+            msg.appendChild(contentDiv);
+            
+            const meta = document.createElement('div');
+            meta.className = 'message-meta';
+            meta.textContent = role === 'user' ? 'You' : (model || 'Assistant');
+            meta.textContent += ' • ' + new Date().toLocaleTimeString();
+            msg.appendChild(meta);
+            
+            dom.chatMessages.appendChild(msg);
+            dom.chatMessages.scrollTop = dom.chatMessages.scrollHeight;
+            
+            return contentDiv;
+        }
+        
+        function formatContent(content) {
+            // Basic markdown-like formatting
+            return content
+                .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+        }
+        
+        function addTypingIndicator() {
+            const indicator = document.createElement('div');
+            indicator.className = 'message assistant';
+            indicator.id = 'typing-indicator';
+            indicator.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+            dom.chatMessages.appendChild(indicator);
+            dom.chatMessages.scrollTop = dom.chatMessages.scrollHeight;
+        }
+        
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) indicator.remove();
+        }
+        
+        async function sendMessage() {
+            const prompt = dom.promptInput.value.trim();
+            if (!prompt) return;
+            
+            const model = state.currentModel;
+            
+            // Add user message
+            addMessage(prompt, 'user');
+            dom.promptInput.value = '';
+            dom.sendBtn.disabled = true;
+            
+            addTypingIndicator();
+            
+            try {
+                let endpoint, body, isStreaming = false;
+                
+                // Determine endpoint based on context
+                if (state.ragContext) {
+                    // RAG query
+                    endpoint = '/rag/query';
+                    body = JSON.stringify({
+                        prompt,
+                        vectorstore_path: state.ragContext,
+                        model
+                    });
+                    isStreaming = true;
+                } else if (state.imageFile) {
+                    // Vision query
+                    endpoint = '/vision/';
+                    const formData = new FormData();
+                    formData.append('prompt', prompt);
+                    formData.append('model', model);
+                    formData.append('image', state.imageFile);
+                    body = formData;
+                } else {
+                    // Regular text
+                    endpoint = '/text/';
+                    body = JSON.stringify({ prompt, models: [model] });
+                }
+                
+                const headers = body instanceof FormData ? {} : { 'Content-Type': 'application/json' };
+                
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers,
+                    body
+                });
+                
+                removeTypingIndicator();
+                
+                if (isStreaming && res.headers.get('content-type')?.includes('text/event-stream')) {
+                    // Handle streaming response
+                    const contentDiv = addMessage('', 'assistant', model);
+                    const reader = res.body.getReader();
+                    const decoder = new TextDecoder();
+                    
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        
+                        const chunk = decoder.decode(value);
+                        const lines = chunk.split('\n\n').filter(l => l.startsWith('data: '));
+                        
+                        for (const line of lines) {
+                            try {
+                                const data = JSON.parse(line.substring(6));
+                                if (data.type === 'content') {
+                                    contentDiv.innerHTML += data.token;
+                                }
+                            } catch {}
+                        }
+                        
+                        dom.chatMessages.scrollTop = dom.chatMessages.scrollHeight;
+                    }
+                } else {
+                    // Handle JSON response
+                    const data = await res.json();
+                    let responseText = '';
+                    
+                    if (data.response) {
+                        responseText = data.response;
+                    } else if (data.results && data.results[model]) {
+                        responseText = data.results[model].response || data.results[model].error || 'No response';
+                    } else {
+                        responseText = JSON.stringify(data, null, 2);
+                    }
+                    
+                    addMessage(responseText, 'assistant', model);
+                }
+                
+                // Clear image after use
+                if (state.imageFile) {
+                    state.imageFile = null;
+                    dom.imagePreview.innerHTML = '';
+                }
+                
+            } catch (error) {
+                removeTypingIndicator();
+                addMessage(`Error: ${error.message}`, 'assistant');
+            }
+            
+            dom.sendBtn.disabled = false;
+        }
+        
+        // ============================================
+        // FILE HANDLING
+        // ============================================
+        async function handleDocUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            dom.ragStatus.innerHTML = `<span style="color: var(--warning)">Processing ${file.name}...</span>`;
+            
+            // Connect via WebSocket for progress updates
+            const ws = new WebSocket(`ws://${location.host}/rag/upload`);
+            
+            ws.onopen = async () => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const base64 = reader.result.split(',')[1];
+                    ws.send(JSON.stringify({ filename: file.name, content: base64 }));
+                };
+                reader.readAsDataURL(file);
+            };
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'update') {
+                    dom.ragStatus.innerHTML = `<span style="color: var(--text-muted)">${data.message}</span>`;
+                } else if (data.type === 'finished') {
+                    state.ragContext = data.path;
+                    dom.ragStatus.innerHTML = `<span style="color: var(--success)">✅ ${data.filename} ready for Q&A</span>
+                        <button onclick="clearRagContext()" style="margin-left: 0.5rem; background: none; border: none; color: var(--error); cursor: pointer;">✕</button>`;
+                } else if (data.type === 'error') {
+                    dom.ragStatus.innerHTML = `<span style="color: var(--error)">❌ ${data.error}</span>`;
+                }
+            };
+        }
+        
+        function clearRagContext() {
+            state.ragContext = null;
+            dom.ragStatus.innerHTML = '';
+        }
+        
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            state.imageFile = file;
+            
+            const reader = new FileReader();
+            reader.onload = () => {
+                dom.imagePreview.innerHTML = `
+                    <img src="${reader.result}" style="max-width: 100%; border-radius: 0.5rem;">
+                    <button onclick="clearImage()" style="display: block; margin-top: 0.5rem; background: none; border: none; color: var(--error); cursor: pointer;">✕ Remove</button>
+                `;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function clearImage() {
+            state.imageFile = null;
+            dom.imagePreview.innerHTML = '';
+        }
+        
+        // ============================================
+        // PEPPER ROBOT FUNCTIONS
+        // ============================================
+        async function pepperAction(action) {
+            try {
+                await fetch(`/pepper/${action}`, { method: 'POST' });
+            } catch (e) {
+                console.error('Pepper action failed:', e);
+            }
+        }
+        
+        function pepperSpeak() {
+            const text = prompt('What should Pepper say?');
+            if (text) {
+                fetch('/pepper/speak', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+            }
+        }
+        
+        // ============================================
+        // UTILITY FUNCTIONS
+        // ============================================
+        function clearChat() {
+            dom.chatMessages.innerHTML = '';
+            addMessage('Chat cleared. How can I help you?', 'assistant');
+        }
+        
+        function exportChat() {
+            const messages = dom.chatMessages.innerText;
+            const blob = new Blob([messages], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'neuropepper_chat.txt';
+            a.click();
+        }
+        
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>RAG Studio - NeuroPepper</title>
+    <style>
+        :root { --bg: #0f172a; --surface: #1e293b; --text: #f1f5f9; --primary: #6366f1; --border: #475569; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; }
+        h1 { text-align: center; margin-bottom: 2rem; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; padding: 1.5rem; margin-bottom: 1rem; }
+        .upload-zone { border: 2px dashed var(--border); border-radius: 0.5rem; padding: 3rem; text-align: center; cursor: pointer; }
+        .upload-zone:hover { border-color: var(--primary); }
+        input, textarea { width: 100%; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 0.5rem; color: var(--text); margin-bottom: 0.5rem; }
+        .btn { padding: 0.75rem 1.5rem; background: var(--primary); border: none; border-radius: 0.5rem; color: white; cursor: pointer; }
+        .answer { background: var(--bg); padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; white-space: pre-wrap; }
+        .nav { text-align: center; margin-bottom: 1rem; }
+        .nav a { color: var(--primary); }
+        #vectorstores { margin-top: 1rem; }
+        .vs-item { padding: 0.5rem; background: var(--bg); border-radius: 0.25rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; }
+    </style>
+</head>
+<body>
+    <div class="nav"><a href="/">← Back to Chat</a></div>
+    <h1>📄 RAG Document Studio</h1>
+    <div class="container">
+        <div class="card">
+            <h2>Upload Documents</h2>
+            <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+                <input type="file" id="file-input" accept=".pdf,.docx,.txt,.md" hidden>
+                <p>📁 Click or drop files here</p>
+                <small>Supports PDF, DOCX, TXT, MD</small>
+            </div>
+            <div id="upload-status"></div>
+            <h3 style="margin-top:1rem">Indexed Documents</h3>
+            <div id="vectorstores"></div>
+        </div>
+        <div class="card">
+            <h2>Query Documents</h2>
+            <textarea id="query" rows="3" placeholder="Ask a question about your documents..."></textarea>
+            <button class="btn" onclick="queryRAG()">Search</button>
+            <div id="answer" class="answer" style="display:none"></div>
+        </div>
+    </div>
+    <script>
+        async function loadVectorstores() {
+            try {
+                const r = await fetch('/api/rag/vectorstores');
+                const d = await r.json();
+                const container = document.getElementById('vectorstores');
+                container.innerHTML = d.vectorstores.length ? d.vectorstores.map(v => `<div class="vs-item"><span>${v}</span><button onclick="deleteVS('${v}')" style="background:#ef4444;border:none;color:white;padding:0.25rem 0.5rem;border-radius:0.25rem;cursor:pointer">Delete</button></div>`).join('') : '<small>No documents indexed yet</small>';
+            } catch(e) { console.error(e); }
+        }
+        
+        document.getElementById('file-input').onchange = async e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            document.getElementById('upload-status').innerHTML = '<span style="color:#f59e0b">Processing ' + file.name + '...</span>';
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                const r = await fetch('/api/rag/upload', {method:'POST', body:formData});
+                const d = await r.json();
+                document.getElementById('upload-status').innerHTML = '<span style="color:#22c55e">✅ ' + file.name + ' indexed</span>';
+                loadVectorstores();
+            } catch(e) {
+                document.getElementById('upload-status').innerHTML = '<span style="color:#ef4444">❌ Error: ' + e.message + '</span>';
+            }
+        };
+        
+        async function deleteVS(name) {
+            if (!confirm('Delete ' + name + '?')) return;
+            await fetch('/api/rag/vectorstore/' + name, {method:'DELETE'});
+            loadVectorstores();
+        }
+        
+        async function queryRAG() {
+            const q = document.getElementById('query').value;
+            if (!q) return;
+            document.getElementById('answer').style.display = 'block';
+            document.getElementById('answer').textContent = 'Searching...';
+            try {
+                const r = await fetch('/api/rag/query', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({question:q})});
+                const d = await r.json();
+                document.getElementById('answer').textContent = d.answer + '\n\n[Strategy: ' + d.strategy + ', Sources: ' + d.sources.length + ']';
+            } catch(e) {
+                document.getElementById('answer').textContent = 'Error: ' + e.message;
+            }
+        }
+        
+        loadVectorstores();
+    </script>
+</body>
+</html>

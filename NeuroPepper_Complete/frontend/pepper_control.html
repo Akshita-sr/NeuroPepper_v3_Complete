@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pepper Robot Control - NeuroPepper</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #475569;
+            --success: #22c55e;
+            --warning: #f59e0b;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, var(--primary), #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+        }
+        
+        .card h2 {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+        
+        .btn {
+            padding: 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            background: var(--primary);
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #334155;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .status.connected { background: rgba(34, 197, 94, 0.2); }
+        .status.simulation { background: rgba(245, 158, 11, 0.2); }
+        
+        .movement-pad {
+            display: grid;
+            grid-template-areas:
+                ". up ."
+                "left . right"
+                ". down .";
+            gap: 0.5rem;
+            max-width: 200px;
+            margin: 0 auto;
+        }
+        
+        .movement-pad .up { grid-area: up; }
+        .movement-pad .down { grid-area: down; }
+        .movement-pad .left { grid-area: left; }
+        .movement-pad .right { grid-area: right; }
+        
+        .nav-link {
+            display: block;
+            text-align: center;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="nav-link">← Back to Chat</a>
+    <h1>🤖 Pepper Robot Control</h1>
+    
+    <div id="status" class="status simulation">
+        Checking connection...
+    </div>
+    
+    <div class="grid">
+        <!-- Speech -->
+        <div class="card">
+            <h2>🔊 Speech</h2>
+            <textarea id="speech-text" placeholder="Enter text for Pepper to say..."></textarea>
+            <div class="btn-grid">
+                <button class="btn" onclick="speak()">Speak</button>
+                <button class="btn btn-secondary" onclick="speakAnimated()">Animated</button>
+            </div>
+        </div>
+        
+        <!-- Gestures -->
+        <div class="card">
+            <h2>🎭 Gestures</h2>
+            <div class="btn-grid">
+                <button class="btn" onclick="action('wave')">👋 Wave</button>
+                <button class="btn" onclick="action('nod')">✅ Nod Yes</button>
+                <button class="btn" onclick="action('shake')">❌ Shake No</button>
+                <button class="btn" onclick="gesture('EXPLAIN')">💬 Explain</button>
+                <button class="btn" onclick="gesture('THINK')">🤔 Think</button>
+                <button class="btn" onclick="gesture('BOW')">🙇 Bow</button>
+            </div>
+        </div>
+        
+        <!-- Emotions -->
+        <div class="card">
+            <h2>😊 Emotions</h2>
+            <div class="btn-grid">
+                <button class="btn" onclick="emotion('HAPPY')" style="background: #22c55e;">😊 Happy</button>
+                <button class="btn" onclick="emotion('SAD')" style="background: #3b82f6;">😢 Sad</button>
+                <button class="btn" onclick="emotion('EXCITED')" style="background: #f59e0b;">🎉 Excited</button>
+                <button class="btn" onclick="emotion('THINKING')" style="background: #8b5cf6;">🤔 Thinking</button>
+                <button class="btn" onclick="emotion('NEUTRAL')" style="background: #64748b;">😐 Neutral</button>
+                <button class="btn" onclick="emotion('SURPRISED')" style="background: #06b6d4;">😲 Surprised</button>
+            </div>
+        </div>
+        
+        <!-- Movement -->
+        <div class="card">
+            <h2>🚶 Movement</h2>
+            <div class="movement-pad">
+                <button class="btn up" onclick="move('forward')">↑</button>
+                <button class="btn left" onclick="move('left')">←</button>
+                <button class="btn right" onclick="move('right')">→</button>
+                <button class="btn down" onclick="move('backward')">↓</button>
+            </div>
+            <button class="btn" style="width: 100%; margin-top: 1rem; background: #ef4444;" onclick="stop()">
+                🛑 STOP
+            </button>
+        </div>
+        
+        <!-- LED Control -->
+        <div class="card">
+            <h2>💡 LEDs</h2>
+            <div class="btn-grid">
+                <button class="btn" onclick="leds('WHITE')" style="background: #fff; color: #000;">White</button>
+                <button class="btn" onclick="leds('RED')" style="background: #ef4444;">Red</button>
+                <button class="btn" onclick="leds('GREEN')" style="background: #22c55e;">Green</button>
+                <button class="btn" onclick="leds('BLUE')" style="background: #3b82f6;">Blue</button>
+                <button class="btn" onclick="leds('YELLOW')" style="background: #eab308;">Yellow</button>
+                <button class="btn" onclick="leds('OFF')" style="background: #1e293b;">Off</button>
+            </div>
+        </div>
+        
+        <!-- Tablet -->
+        <div class="card">
+            <h2>📱 Tablet</h2>
+            <input id="tablet-text" placeholder="Text or URL to display">
+            <div class="btn-grid">
+                <button class="btn" onclick="showTablet('text')">Show Text</button>
+                <button class="btn" onclick="showTablet('web')">Show Web</button>
+                <button class="btn btn-secondary" onclick="hideTablet()">Hide</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = '';
+        
+        async function checkStatus() {
+            try {
+                const res = await fetch(`${API}/pepper/status`);
+                const data = await res.json();
+                const el = document.getElementById('status');
+                
+                if (data.connected) {
+                    el.className = 'status connected';
+                    el.textContent = `✅ Connected to Pepper | Battery: ${data.battery || '?'}%`;
+                } else {
+                    el.className = 'status simulation';
+                    el.textContent = '⚠️ Simulation Mode - No robot connected';
+                }
+            } catch {
+                document.getElementById('status').textContent = '❌ Server unavailable';
+            }
+        }
+        
+        async function speak() {
+            const text = document.getElementById('speech-text').value;
+            if (!text) return;
+            await fetch(`${API}/pepper/speak`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+            });
+        }
+        
+        async function speakAnimated() {
+            const text = document.getElementById('speech-text').value;
+            if (!text) return;
+            await fetch(`${API}/pepper/speak`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, gesture: 'EXPLAIN' })
+            });
+        }
+        
+        async function action(name) {
+            await fetch(`${API}/pepper/${name}`, { method: 'POST' });
+        }
+        
+        async function gesture(name) {
+            await fetch(`${API}/pepper/gesture`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ gesture: name })
+            });
+        }
+        
+        async function emotion(name) {
+            await fetch(`${API}/pepper/emotion`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ emotion: name })
+            });
+        }
+        
+        async function move(direction) {
+            const distances = {
+                forward: { x: 0.3, y: 0, theta: 0 },
+                backward: { x: -0.3, y: 0, theta: 0 },
+                left: { x: 0, y: 0, theta: 0.5 },
+                right: { x: 0, y: 0, theta: -0.5 }
+            };
+            await fetch(`${API}/pepper/move`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(distances[direction])
+            });
+        }
+        
+        async function stop() {
+            await fetch(`${API}/pepper/stop`, { method: 'POST' });
+        }
+        
+        async function leds(color) {
+            await fetch(`${API}/pepper/leds`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ group: 'eyes', color })
+            });
+        }
+        
+        async function showTablet(type) {
+            const content = document.getElementById('tablet-text').value;
+            if (!content) return;
+            await fetch(`${API}/pepper/tablet`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content, content_type: type })
+            });
+        }
+        
+        async function hideTablet() {
+            await fetch(`${API}/pepper/tablet/hide`, { method: 'POST' });
+        }
+        
+        // Check status on load and periodically
+        checkStatus();
+        setInterval(checkStatus, 5000);
+    </script>
+</body>
+</html>

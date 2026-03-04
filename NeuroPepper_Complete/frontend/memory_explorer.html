@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Memory Explorer - NeuroPepper</title>
+    <style>
+        :root { --bg: #0f172a; --surface: #1e293b; --text: #f1f5f9; --primary: #6366f1; --border: #475569; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; }
+        h1 { text-align: center; margin-bottom: 2rem; }
+        .container { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; padding: 1.5rem; }
+        input, textarea { width: 100%; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 0.5rem; color: var(--text); margin-bottom: 0.5rem; }
+        .btn { padding: 0.75rem 1.5rem; background: var(--primary); border: none; border-radius: 0.5rem; color: white; cursor: pointer; margin-right: 0.5rem; margin-bottom: 0.5rem; }
+        .memory-item { padding: 0.75rem; background: var(--bg); border-radius: 0.5rem; margin-bottom: 0.5rem; }
+        .memory-item small { color: var(--muted); }
+        .nav { text-align: center; margin-bottom: 1rem; grid-column: span 2; }
+        .nav a { color: var(--primary); }
+        @media (max-width: 768px) { .container { grid-template-columns: 1fr; } .nav { grid-column: span 1; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav"><a href="/">← Back to Chat</a></div>
+        <div class="card">
+            <h2>🧠 User Memories</h2>
+            <input id="user-id" placeholder="User ID" value="web_user">
+            <button class="btn" onclick="loadMemories()">Load</button>
+            <button class="btn" style="background:#ef4444" onclick="clearMemories()">Clear All</button>
+            <div id="memories" style="margin-top:1rem;max-height:400px;overflow-y:auto"></div>
+        </div>
+        <div class="card">
+            <h2>➕ Add Memory</h2>
+            <input id="mem-content" placeholder="Memory content">
+            <select id="mem-type"><option value="fact">Fact</option><option value="preference">Preference</option><option value="interaction">Interaction</option></select>
+            <button class="btn" onclick="addMemory()">Store Memory</button>
+            <h3 style="margin-top:1.5rem">👤 User Profile</h3>
+            <div id="profile" style="margin-top:0.5rem"></div>
+        </div>
+        <div class="card" style="grid-column: span 2">
+            <h2>🔍 Search Memories</h2>
+            <input id="search-query" placeholder="Search query">
+            <button class="btn" onclick="searchMemories()">Search</button>
+            <div id="search-results" style="margin-top:1rem"></div>
+        </div>
+    </div>
+    <script>
+        async function loadMemories() {
+            const userId = document.getElementById('user-id').value;
+            try {
+                const r = await fetch('/api/memory/user/' + userId);
+                const d = await r.json();
+                document.getElementById('memories').innerHTML = d.memories.length ? d.memories.map(m => `<div class="memory-item"><strong>${m.type}</strong>: ${m.content}<br><small>ID: ${m.id}</small></div>`).join('') : '<small>No memories</small>';
+                
+                const p = await fetch('/api/memory/profile/' + userId);
+                const pd = await p.json();
+                document.getElementById('profile').innerHTML = pd.profile ? `<div class="memory-item"><strong>Name:</strong> ${pd.profile.name || 'Unknown'}<br><strong>Interactions:</strong> ${pd.profile.interaction_count}<br><strong>Facts:</strong> ${(pd.profile.facts || []).join(', ') || 'None'}</div>` : '<small>No profile</small>';
+            } catch(e) { console.error(e); }
+        }
+        
+        async function addMemory() {
+            const userId = document.getElementById('user-id').value;
+            const content = document.getElementById('mem-content').value;
+            const type = document.getElementById('mem-type').value;
+            if (!content) return;
+            await fetch('/api/memory/store', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:userId, content, memory_type:type, importance:0.5})});
+            document.getElementById('mem-content').value = '';
+            loadMemories();
+        }
+        
+        async function clearMemories() {
+            const userId = document.getElementById('user-id').value;
+            if (!confirm('Clear all memories for ' + userId + '?')) return;
+            await fetch('/api/memory/user/' + userId + '/clear', {method:'DELETE'});
+            loadMemories();
+        }
+        
+        async function searchMemories() {
+            const userId = document.getElementById('user-id').value;
+            const query = document.getElementById('search-query').value;
+            if (!query) return;
+            const r = await fetch('/api/memory/search', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:userId, query, limit:10})});
+            const d = await r.json();
+            document.getElementById('search-results').innerHTML = d.memories.length ? d.memories.map(m => `<div class="memory-item"><strong>${m.type}</strong>: ${m.content}</div>`).join('') : '<small>No results</small>';
+        }
+        
+        loadMemories();
+    </script>
+</body>
+</html>
